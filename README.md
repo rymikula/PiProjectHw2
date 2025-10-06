@@ -4,29 +4,25 @@ This project provides runnable reference implementations to transfer files using
 
 ### Quick Start
 
-- **0) Create the 4 files**
+- **Use provided DataFiles**
 ```bash
-python3 scripts/generate_files.py --out files
+python3 scripts/use_datafiles.py --from-dir DataFiles --out files
 ```
-Creates:
-- `files/f_100B.bin` (~100 bytes)
-- `files/f_10KB.bin` (~10 KiB)
-- `files/f_1MB.bin` (~1 MiB)
-- `files/f_10MB.bin` (~10 MiB)
+This copies your provided files into `files/` with canonical names matched by size.
 
-- **1) Install dependencies**
+- **Install dependencies**
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-- **2) Configure addresses** (edit `.env`)
+- **Configure addresses** (edit `.env`)
 ```bash
 cp .env.example .env
 ```
 Vars: `BROKER_HOST`, `BROKER_PORT`, `COAP_HOST`, `COAP_PORT`, `HTTP_HOST`, `HTTP_PORT`.
 
-- **3) MQTT experiments**
+- **MQTT experiments**
 Broker (e.g., Mosquitto): `mosquitto -p 1883`
 Publisher:
 ```bash
@@ -40,7 +36,7 @@ python3 mqtt/subscriber.py --qos 2
 ```
 Logs: `logs/mqtt/`.
 
-- **4) CoAP experiments**
+- **CoAP experiments**
 Server:
 ```bash
 python3 coap/server.py --files-dir files
@@ -50,7 +46,7 @@ Client:
 python3 coap/client.py --files-dir files
 ```
 
-- **5) HTTP experiments**
+- **HTTP experiments**
 Server:
 ```bash
 python3 http/server.py --files-dir files
@@ -60,7 +56,7 @@ Client:
 python3 http/client.py --files-dir files
 ```
 
-- **6) Aggregate to Excel**
+- **Aggregate to Excel**
 ```bash
 python3 tools/aggregate_results.py --out "results/Results File.xlsx"
 ```
