@@ -15,6 +15,7 @@ This copies your provided files into `files/` with canonical names matched by si
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
+Note: `uvloop` was removed to avoid build failures on Python 3.13; no functionality depends on it.
 
 - **Configure addresses** (edit `.env`)
 ```bash
