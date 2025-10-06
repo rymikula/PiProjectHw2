@@ -15,11 +15,12 @@ from common.logging_utils import (
     monotonic_ns,
     estimate_mqtt_publish_overhead_bytes,
 )
+from common.fileset import discover_files_by_size, build_iterations_by_filename
 
 
-def load_files(files_dir: str) -> Dict[str, bytes]:
-    files = {}
-    for name in ["f_100B.bin", "f_10KB.bin", "f_1MB.bin", "f_10MB.bin"]:
+def load_files(files_dir: str, selected: Dict[int, str]) -> Dict[str, bytes]:
+    files: Dict[str, bytes] = {}
+    for sz, name in selected.items():
         path = os.path.join(files_dir, name)
         with open(path, "rb") as f:
             files[name] = f.read()
@@ -29,7 +30,7 @@ def load_files(files_dir: str) -> Dict[str, bytes]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--qos", type=int, choices=[1, 2], required=True)
-    parser.add_argument("--files-dir", default="files")
+    parser.add_argument("--files-dir", default="DataFiles")
     parser.add_argument("--client-id", default=None)
     args = parser.parse_args()
 
@@ -44,8 +45,11 @@ def main() -> None:
     log_path = os.path.join(settings.log_dir, "mqtt", f"publisher_qos{args.qos}.csv")
     logger = CsvLogger(log_path)
 
-    files = load_files(args.files_dir)
-    counts = settings.counts.to_map()
+    selected = discover_files_by_size(args.files_dir)
+    if len(selected) < 4:
+        raise SystemExit("Expected 4 files in DataFiles with sizes 100B, 10KB, 1MB, 10MB")
+    files = load_files(args.files_dir, selected)
+    counts_by_name = build_iterations_by_filename(selected, settings.counts.to_map())
 
     client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311)
     client.connect(host, port, keepalive=60)
@@ -53,7 +57,7 @@ def main() -> None:
 
     try:
         for file_name, payload in files.items():
-            iterations = counts[file_name]
+            iterations = counts_by_name[file_name]
             for i in range(1, iterations + 1):
                 seq = str(uuid.uuid4())
                 topic = f"{topic_prefix}/{file_name}/{seq}"
@@ -83,7 +87,6 @@ def main() -> None:
                         extra_meta={"topic": topic},
                     )
                 )
-                # pacing to avoid overwhelming broker in extreme loops
                 if i % 100 == 0:
                     time.sleep(0.01)
     finally:

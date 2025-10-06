@@ -1,0 +1,1 @@
+protocol,role,file_name,file_size_bytes,iteration,seq_id,qos_or_mode,t_start_ns,t_end_ns,duration_ms,bytes_sent_sender_to_receiver,extra_meta_json

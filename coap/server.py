@@ -88,7 +88,7 @@ async def main_async(files_dir: str, host: str, port: int, logger: CsvLogger):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--files-dir", default="files")
+    parser.add_argument("--files-dir", default="DataFiles")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()

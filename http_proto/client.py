@@ -6,11 +6,12 @@ import requests
 
 from common.config import Settings
 from common.logging_utils import CsvLogger, TransferLogEntry, monotonic_ns
+from common.fileset import discover_files_by_size, build_iterations_by_filename
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--files-dir", default="files")
+    parser.add_argument("--files-dir", default="DataFiles")
     args = parser.parse_args()
 
     settings = Settings.load()
@@ -20,18 +21,21 @@ def main() -> None:
     os.makedirs(os.path.join(settings.log_dir, "http"), exist_ok=True)
     logger = CsvLogger(os.path.join(settings.log_dir, "http", "client.csv"))
 
-    counts = settings.counts.to_map()
+    selected = discover_files_by_size(args.files_dir)
+    if len(selected) < 4:
+        raise SystemExit("Expected 4 files in DataFiles with sizes 100B, 10KB, 1MB, 10MB")
+    counts_by_name = build_iterations_by_filename(selected, settings.counts.to_map())
 
     session = requests.Session()
 
-    for file_name, iterations in counts.items():
+    for file_name, iterations in counts_by_name.items():
         for i in range(1, iterations + 1):
             seq = str(uuid.uuid4())
             url = f"http://{host}:{port}/files/{file_name}?seq={seq}&iter={i}"
             t0 = monotonic_ns()
             r = session.get(url)
             r.raise_for_status()
-            _ = r.content
+            payload = r.content
             t1 = monotonic_ns()
             duration_ms = (t1 - t0) / 1e6
 
@@ -40,19 +44,17 @@ def main() -> None:
                     protocol="http",
                     role="client",
                     file_name=file_name,
-                    file_size_bytes=len(_),
+                    file_size_bytes=len(payload),
                     iteration=i,
                     seq_id=seq,
                     qos_or_mode="http",
                     t_start_ns=t0,
                     t_end_ns=t1,
                     duration_ms=duration_ms,
-                    bytes_sent_sender_to_receiver=len(_),
+                    bytes_sent_sender_to_receiver=len(payload),
                     extra_meta=None,
                 )
             )
-            if i % 100 == 0:
-                pass
 
 
 if __name__ == "__main__":

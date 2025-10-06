@@ -39,11 +39,9 @@ class FileHandler(BaseHTTPRequestHandler):
             payload = f.read()
 
         t0 = monotonic_ns()
-        # Build headers
         body = payload
         body_len = len(body)
         self.send_response(200, "OK")
-        # Minimal headers to be consistent
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("Content-Length", str(body_len))
         self.end_headers()
@@ -52,7 +50,6 @@ class FileHandler(BaseHTTPRequestHandler):
         t1 = monotonic_ns()
         duration_ms = (t1 - t0) / 1e6
 
-        # Approximate bytes sender->receiver at app layer: status line + headers + CRLFs + body
         status_line = f"HTTP/1.0 200 OK\r\n"
         headers = [
             f"Server: {self.server_version}\r\n",
@@ -86,7 +83,7 @@ class FileHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--files-dir", default="files")
+    parser.add_argument("--files-dir", default="DataFiles")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
